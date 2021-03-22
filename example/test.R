@@ -1,0 +1,5 @@
+data <- read.csv("test.csv")
+data2 <- read.csv("random.csv")
+data2$factor1 <- as.factor(data2$factor1)
+data2$factor2 <- as.factor(data2$factor2)
+print(summary(aov(obs ~ factor2, data = data2)))
