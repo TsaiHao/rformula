@@ -3,6 +3,7 @@ Author: Zaijun Hao
 Reference: 
     [1] https://docs.scipy.org/doc/scipy/reference/stats.html
     [2] https://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704_hypothesistesting-anova/bs704_hypothesistesting-anova_print.html
+    [3] https://en.wikipedia.org/wiki/Friedman_test
 """
 
 import pandas as pd
