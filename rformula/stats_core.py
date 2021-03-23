@@ -112,7 +112,7 @@ class anova:
             sa += nj[i] * means[i] * means[i]
         f = sa * df2 / se / df1
         p = stats.f.sf(f, df1, df2)
-        return OnewayAnovaResult(f, p, df1, df2)
+        return OnewayAnovaResult(f, df1, df2)
 
 def aov(formula, data):
     obs, factors, interfactors = parseFormula(formula)
@@ -120,3 +120,44 @@ def aov(formula, data):
         return anova.oneway(obs, factors[0], data)
     else:
         raise ValueError("multifactor anova is not implemented now")
+
+class friedman:
+    @staticmethod
+    def test(first, data = None):
+        """
+        perform friedman test on data, formula is different from R
+        first:          str, formula to assign observations and factor, factor must be one
+                        np.ndarray, perform test on mat directly, columns are treatments, rows are blocks
+        data:           pd.DataFrame
+        """
+        if isinstance(first, str):
+            dv, ivs, intfs = parseFormula(first)
+            if len(ivs) != 1:
+                raise ValueError("factor must be one")
+            iv = ivs[0]
+            levels = pd.unique(data[first])
+            nlevels = len(pd.unique(levels))
+            gb = data.groupby(iv)
+            blocks = np.unique(gb.count()[dv])
+            if len(blocks) != 1:
+                raise ValueError("all factor level must have same length")
+            mat = np.zeros((blocks * nlevels))
+            for i, lv in enumerate(levels):
+                mat[:, i] = gb.get_group(lv)[dv].values
+            return friedman._friedmantest(mat)
+        elif isinstance(first, np.ndarray):
+            return friedman._friedmantest(first)
+        else:
+            raise ValueError("argument format is not correct")
+
+    @staticmethod
+    def _friedmantest(mat):
+        blocks, treatments = mat.shape
+        rankmat = np.zeros((blocks, treatments))
+        for i in range(blocks):
+            rankmat[i, :] = stats.rankdata(mat[i, :])
+        ravgs = np.mean(rankmat, 0)
+        ravgs -= (treatments + 1) / 2
+        Q = 12 * blocks / (treatments * (treatments + 1)) * np.sum(ravgs * ravgs)
+        p = stats.chi2.sf(Q, treatments - 1)
+        return FriedmantestResult(Q, treatments - 1)
