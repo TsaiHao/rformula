@@ -5,6 +5,7 @@ Reference:
     [2] https://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704_hypothesistesting-anova/bs704_hypothesistesting-anova_print.html
     [3] https://en.wikipedia.org/wiki/Friedman_test
 """
+import warnings
 
 import pandas as pd
 import numpy as np
@@ -113,7 +114,7 @@ class anova:
             sa += nj[i] * means[i] * means[i]
         f = sa * df2 / se / df1
         p = stats.f.sf(f, df1, df2)
-        return OnewayAnovaResult(f, df1, df2)
+        return FResult("OnewayAnova", f, df1, df2)
 
 def aov(formula, data):
     obs, factors, interfactors = parseFormula(formula)
@@ -121,6 +122,35 @@ def aov(formula, data):
         return anova.oneway(obs, factors[0], data)
     else:
         raise ValueError("multifactor anova is not implemented now")
+
+class kruskal:
+    @staticmethod
+    def test(formula: str, data: pd.DataFrame):
+        """
+        perform kruskal-wallis test on data
+        formula:        str, same with anova
+        data:           pd.DataFrame, same with anova
+        """
+        dep, ivs, intfs = parseFormula(formula)
+        if len(ivs) != 1:
+            raise ValueError("factor must be one")
+        return kruskal._kwtest(dep, ivs[0], data)
+
+    @staticmethod
+    def _kwtest(dpv, idv, data):
+        datacol = stats.rankdata(data[dpv].values)
+        gb = data.groupby(idv)
+        avgall = (len(datacol) + 1) / 2
+        # if datacol contains tie
+        den = 0
+        num = 0
+        for gp in gb.groups:
+            idx = gb.groups[gp]
+            num += len(idx) * (np.mean(datacol[idx]) - avgall) ** 2
+            for i in idx:
+                den += (datacol[i] - avgall) * (datacol[i] - avgall)
+        H = (len(datacol) - 1) * num / den
+        return Chi2Result("kruskal-wallis", H, len(gb) - 1)
 
 class friedman:
     @staticmethod
@@ -136,12 +166,14 @@ class friedman:
             if len(ivs) != 1:
                 raise ValueError("factor must be one")
             iv = ivs[0]
-            levels = pd.unique(data[first])
-            nlevels = len(pd.unique(levels))
             gb = data.groupby(iv)
+            levels = pd.unique(data[first])
+            nlevels = len(gb)
             blocks = np.unique(gb.count()[dv])
             if len(blocks) != 1:
                 raise ValueError("all factor level must have same length")
+            if blocks <= 15 and nlevels <= 4:
+                warnings.warn("friedman test works beter when blocks > 15 or nlevels > 4")
             mat = np.zeros((blocks * nlevels))
             for i, lv in enumerate(levels):
                 mat[:, i] = gb.get_group(lv)[dv].values
@@ -161,4 +193,4 @@ class friedman:
         ravgs -= (treatments + 1) / 2
         Q = 12 * blocks / (treatments * (treatments + 1)) * np.sum(ravgs * ravgs)
         p = stats.chi2.sf(Q, treatments - 1)
-        return FriedmantestResult(Q, treatments - 1)
+        return Chi2Result("Friedmantest", Q, treatments - 1)

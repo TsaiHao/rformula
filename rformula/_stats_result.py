@@ -5,10 +5,11 @@ Optional:
 from scipy import stats
 
 class _StatsResult:
-    def __init__(self, statistic):
+    def __init__(self, name, statistic):
         self.statistic = statistic
         self.p = 0
         self.dfs = ()
+        self.name = name
 
     def __iter__(self):
         self.iter_count = 0
@@ -24,20 +25,20 @@ class _StatsResult:
     def DegreeOfFreedom(self):
         return self.dfs
 
-class OnewayAnovaResult(_StatsResult):
-    def __init__(self, f, df1, df2):
-        super(OnewayAnovaResult, self).__init__(f)
+class FResult(_StatsResult):
+    def __init__(self, name, f, df1, df2):
+        super(FResult, self).__init__(name, f)
         self.dfs = (df1, df2)
         self.p = stats.f.sf(f, df1, df2)
 
     def __repr__(self):
-        return "AnovaResult(f-statistic={:f}, p-value={:f})".format(self.statistic, self.p)
+        return "{:s}Result(f-statistic={:f}, p-value={:f})".format(self.name, self.statistic, self.p)
 
-class FriedmantestResult(_StatsResult):
-    def __init__(self, chi2, df1):
-        super(FriedmantestResult, self).__init__(chi2)
+class Chi2Result(_StatsResult):
+    def __init__(self, name, chi2, df1):
+        super(Chi2Result, self).__init__(name, chi2)
         self.df = (df1)
         self.p = stats.chi2.sf(chi2, df1)
 
     def __repr__(self):
-        return "FriedmantestResult(chi2-square={:f}, p-value={:f}".format(self.statistic, self.p)
+        return "{:s}Result(chi2-square={:f}, p-value={:f})".format(self.name, self.statistic, self.p)
