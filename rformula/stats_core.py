@@ -4,6 +4,7 @@ Reference:
     [1] https://docs.scipy.org/doc/scipy/reference/stats.html
     [2] https://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704_hypothesistesting-anova/bs704_hypothesistesting-anova_print.html
     [3] https://en.wikipedia.org/wiki/Friedman_test
+    [4] 
 """
 import warnings
 
@@ -54,17 +55,17 @@ class t:
 
 class wilcox:
     @staticmethod
-    def test(x, y = None, data = None, **kwargs):
+    def test(x, data = None, **kwargs):
         """
-        (x: array-like, y: None or array-like):     perform wilcoxon test between two measurements
-        (x: str, y: None, data: pd.DataFrame):      perform wilcoxon test using R-like formula
+        (x: array-like, data: None or array-like):      perform wilcoxon test between two measurements
+        (x: str, data: pd.DataFrame):                   perform wilcoxon test using R-like formula
         """
-        if not data is None:
+        if isinstance(data, pd.DataFrame):
             depvar, indvars, _ = parseFormula(x)
             if (len(indvars) != 1):
                 raise ValueError("number of indpendent variable must be one in formula")
             return wilcox._wilcoxtest(depvar, indvars[0], data, **kwargs)
-        return stats.wilcoxon(x, y, **kwargs)
+        return stats.wilcoxon(x, data, **kwargs)
 
     @staticmethod
     def _wilcoxtest(depvar: str, indvar: str, data, **kwargs):
