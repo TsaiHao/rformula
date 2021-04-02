@@ -4,7 +4,7 @@ Reference:
     [1] https://docs.scipy.org/doc/scipy/reference/stats.html
     [2] https://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704_hypothesistesting-anova/bs704_hypothesistesting-anova_print.html
     [3] https://en.wikipedia.org/wiki/Friedman_test
-    [4] 
+    [4] https://en.wikipedia.org/wiki/Kruskal%E2%80%93Wallis_one-way_analysis_of_variance
 """
 import warnings
 
@@ -68,7 +68,7 @@ class wilcox:
         return stats.wilcoxon(x, data, **kwargs)
 
     @staticmethod
-    def _wilcoxtest(depvar: str, indvar: str, data, **kwargs):
+    def _wilcoxtest(depvar: str, indvar: str, data, **kwargs): 
         """
         Perform two-sample wilcoxon test with two factor name
         depvar:     str, first sample name
