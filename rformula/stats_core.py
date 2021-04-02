@@ -140,13 +140,14 @@ class kruskal:
     @staticmethod
     def _kwtest(dpv, idv, data):
         datacol = stats.rankdata(data[dpv].values)
+        dix = pd.DataFrame({"ix": np.arange(len(data))}, index = data.index)
         gb = data.groupby(idv)
         avgall = (len(datacol) + 1) / 2
         # if datacol contains tie
         den = 0
         num = 0
         for gp in gb.groups:
-            idx = gb.groups[gp]
+            idx = dix.ix[gb.groups[gp]]
             num += len(idx) * (np.mean(datacol[idx]) - avgall) ** 2
             for i in idx:
                 den += (datacol[i] - avgall) * (datacol[i] - avgall)
@@ -168,14 +169,14 @@ class friedman:
                 raise ValueError("factor must be one")
             iv = ivs[0]
             gb = data.groupby(iv)
-            levels = pd.unique(data[first])
+            levels = pd.unique(data[iv])
             nlevels = len(gb)
             blocks = np.unique(gb.count()[dv])
             if len(blocks) != 1:
                 raise ValueError("all factor level must have same length")
             if blocks <= 15 and nlevels <= 4:
                 warnings.warn("friedman test works beter when blocks > 15 or nlevels > 4")
-            mat = np.zeros((blocks * nlevels))
+            mat = np.zeros((blocks[0], nlevels))
             for i, lv in enumerate(levels):
                 mat[:, i] = gb.get_group(lv)[dv].values
             return friedman._friedmantest(mat)
