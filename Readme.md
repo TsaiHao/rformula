@@ -6,6 +6,6 @@ This module is designed for statistical anlysis in python using R formula. See e
 
 + t test(independent / dependent / 1sample)
 + wilcoxon test (dependent / 1sample)
-+ aov (one-way)
++ aov (one-way / two-way(repeated) / two-way)
 + friedman
 + kruskal-wallis
