@@ -34,6 +34,23 @@ class FResult(_StatsResult):
     def __repr__(self):
         return "{:s}Result(f-statistic={:f}, p-value={:f})".format(self.name, self.statistic, self.p)
 
+class Aov2Result():
+    def __init__(self, factor1, factor2, interfactor = None):
+        """
+        factors: [factor-name, factor-F, factor-df1, factor-df2]
+        """
+        self.fr1 = FResult(factor1[0], factor1[1], factor1[2], factor1[3])
+        self.fr2 = FResult(factor2[0], factor2[1], factor2[2], factor2[3])
+        if interfactor is not None:
+            self.inf = FResult(interfactor[0], interfactor[1], interfactor[2], interfactor[3])
+        else:
+            self.inf = None
+    def __repr__(self):
+        rep = repr(self.fr1) + "\n" + repr(self.fr2)
+        if self.inf is not None:
+            rep += "\n" + repr(self.inf)
+        return rep
+
 class Chi2Result(_StatsResult):
     def __init__(self, name, chi2, df1):
         super(Chi2Result, self).__init__(name, chi2)

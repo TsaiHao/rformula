@@ -4,7 +4,7 @@ Reference:
     [1] https://docs.scipy.org/doc/scipy/reference/stats.html
     [2] https://sphweb.bumc.bu.edu/otlt/mph-modules/bs/bs704_hypothesistesting-anova/bs704_hypothesistesting-anova_print.html
     [3] https://en.wikipedia.org/wiki/Friedman_test
-    [4] 
+    [4] https://en.wikipedia.org/wiki/Kruskal%E2%80%93Wallis_one-way_analysis_of_variance
 """
 import warnings
 
@@ -68,7 +68,7 @@ class wilcox:
         return stats.wilcoxon(x, data, **kwargs)
 
     @staticmethod
-    def _wilcoxtest(depvar: str, indvar: str, data, **kwargs):
+    def _wilcoxtest(depvar: str, indvar: str, data, **kwargs): 
         """
         Perform two-sample wilcoxon test with two factor name
         depvar:     str, first sample name
@@ -93,10 +93,14 @@ class anova:
         factor:         str, factor column name
         data:           pd.DataFrame, testing data
         """
-        return anova._ftest(obs, factor, data)
+        return anova._ftest1(obs, factor, data)
+    
+    @staticmethod
+    def twoway(obs: str, factor1, factor2, data, repeated = True):
+        return anova._ftest2(obs, factor1, factor2, data, repeated)
 
     @staticmethod
-    def _ftest(obs, factor, data):
+    def _ftest1(obs, factor, data):
         gb = data.groupby(factor)
         levels = pd.unique(data[factor])
         means = gb.mean()[obs].values
@@ -117,10 +121,50 @@ class anova:
         p = stats.f.sf(f, df1, df2)
         return FResult("OnewayAnova", f, df1, df2)
 
+    @staticmethod
+    def _ftest2(obs, factor1, factor2, data, repeated = True):
+        gb = data.groupby([factor1, factor2])
+        ts = gb.sum().reset_index()
+        r = len(pd.unique(ts[factor1]))
+        s = len(pd.unique(ts[factor2]))
+        t = 1
+        dfall = (r - 1) * (s - 1)
+        if repeated:
+            t = len(data) / r / s
+            dfall = r * s * t - 1
+            if not t == int(t):
+                raise ValueError("repeat measure needs same number of tests")
+
+        Tij = ts[obs].values
+        tsp = ts.pivot(index = factor1, columns = [factor2], values = obs)
+        Tj = tsp.sum(0).values
+        Ti = tsp.sum(1).values
+        T = np.sum(Ti)
+        Tsq = T * T / (r * s * t)
+        ST = np.sum(data[obs] * data[obs]) - Tsq
+        SA = np.sum(Ti * Ti) / (s * t) - Tsq
+        SB = np.sum(Tj * Tj) / (r * t) - Tsq
+        SAB = (np.sum(Tij * Tij) / t - Tsq - SA - SB) if repeated else 0
+        SE = ST - SA - SB - SAB
+        SEA = SE / ((r - 1) * (s - 1))
+        if repeated:
+            SEA = SE / (r * s * (t - 1))
+        FA = SA / (r - 1) / SEA
+        FB = SB / (s - 1) / SEA
+        inf = None
+        if repeated:
+            FAB = SAB / ((r - 1) * (s - 1)) / SEA
+            inf = ("interfactor", FAB, (r - 1) * (s - 1), dfall)
+        return Aov2Result((factor1, FA, r - 1, dfall), \
+            (factor2, FB, s - 1, dfall), inf)
+
+
 def aov(formula, data):
     obs, factors, interfactors = parseFormula(formula)
     if len(factors) == 1:
         return anova.oneway(obs, factors[0], data)
+    elif len(factors) == 2:
+        return anova.twoway(obs, factors[0], factors[1], data, (len(interfactors) != 0))
     else:
         raise ValueError("multifactor anova is not implemented now")
 
@@ -187,6 +231,9 @@ class friedman:
 
     @staticmethod
     def _friedmantest(mat):
+        """
+        mat: np.ndarray, each column corresponding to one observation
+        """
         blocks, treatments = mat.shape
         rankmat = np.zeros((blocks, treatments))
         for i in range(blocks):
