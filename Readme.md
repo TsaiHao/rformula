@@ -9,3 +9,9 @@ This module is designed for statistical anlysis in python using R formula. See e
 + aov (one-way / two-way(repeated) / two-way)
 + friedman
 + kruskal-wallis
+
+## Dependency
+
++ numpy
++ pandas
++ scipy.stats
